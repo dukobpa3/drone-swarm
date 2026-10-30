@@ -2,3 +2,4 @@
 .scannerwork/
 coverage.out
 bin/
+golangci-lint.xml

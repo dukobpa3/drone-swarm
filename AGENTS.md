@@ -8,12 +8,17 @@ github.com/dukobpa3/drone-swarm-sim; change it there or push it back with
 ## Before committing
 
 - Go code builds and vets (`cd sim && go vet ./... && go build ./...`).
+- `make lint` (golangci-lint, `.golangci.yml`) adds nothing new. Answer a
+  false positive on its line with `//nolint:<linter> // <why>` or
+  `// NOSONAR <why>`, never by closing the issue on the server.
 - If `SONAR_HOST_URL` and `SONAR_TOKEN` are set (environment or `.env`):
   `make sonar` passes (quality gate green). See what it flagged with
   `sonar list issues --format table`. If they are not set, skip this: it is
   a check on the maintainer's machine.
 - A new service's code directories go into `sonar.sources`/`sonar.tests` in
   `sonar-project.properties` and into the pattern in `.githooks/pre-commit`.
+  A new Go module also goes into `GO_MODULES` in the Makefile and its
+  `<module>/golangci-lint.xml` into `sonar.go.golangci-lint.reportPaths`.
 
 ## SonarQube rules
 
