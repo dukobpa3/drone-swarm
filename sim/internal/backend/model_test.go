@@ -105,7 +105,7 @@ func TestComposeModel(t *testing.T) {
 		`<include merge="true">`,
 		`<uri>model://x500</uri>`,
 		`<name>ir</name>`,
-		`<pose>0.12 0 0.24 0 0 0</pose>`,
+		`<pose relative_to="base_link">0.12 0 0.24 0 0 0</pose>`,
 		`<joint name="ir_mount" type="fixed">`,
 		`<parent>base_link</parent>`,
 		`<child>ir::thermal_link</child>`,

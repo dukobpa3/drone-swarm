@@ -131,8 +131,9 @@ func composeModel(name, base string, mounts []mount) []byte {
 	for _, m := range mounts {
 		pose := make([]float64, 6)
 		copy(pose, m.Pose)
-		fmt.Fprintf(&b, "    <include>\n      <name>%s</name>\n      <uri>model://%s</uri>\n      <pose>%g %g %g %g %g %g</pose>\n    </include>\n",
-			esc(m.Name), esc(m.Model), pose[0], pose[1], pose[2], pose[3], pose[4], pose[5])
+		// relative to the mounting link: a base model may place it off its own frame
+		fmt.Fprintf(&b, "    <include>\n      <name>%s</name>\n      <uri>model://%s</uri>\n      <pose relative_to=\"%s\">%g %g %g %g %g %g</pose>\n    </include>\n",
+			esc(m.Name), esc(m.Model), mountLink, pose[0], pose[1], pose[2], pose[3], pose[4], pose[5])
 		fmt.Fprintf(&b, "    <joint name=\"%s_mount\" type=\"fixed\">\n      <parent>%s</parent>\n      <child>%s::%s</child>\n    </joint>\n",
 			esc(m.Name), mountLink, esc(m.Name), esc(m.link))
 	}
