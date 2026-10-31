@@ -1,9 +1,9 @@
 # drone-swarm
 
 Monorepo for the swarm: ground control, companion, protocols and the
-simulation launcher. `sim/` is a `git subtree` of
-github.com/dukobpa3/drone-swarm-sim; change it there or push it back with
-`git subtree push --prefix=sim git@github.com:dukobpa3/drone-swarm-sim.git master`.
+simulation launcher. `sim/` is developed here; github.com/dukobpa3/drone-swarm-sim
+is only its mirror, updated with `make sim-push` after a merge to `master`. Never
+change the mirror directly.
 
 ## Before committing
 

@@ -5,8 +5,8 @@ make test
 make lint    # golangci-lint v2 (brew install golangci-lint)
 ```
 
-`sim/` comes from github.com/dukobpa3/drone-swarm-sim through `git subtree`;
-see `sim/README.md`.
+`sim/` is developed here. github.com/dukobpa3/drone-swarm-sim is its mirror:
+after a merge to `master`, `make sim-push` sends the history of `sim/` there.
 
 ## SonarQube (optional)
 
