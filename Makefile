@@ -1,4 +1,4 @@
-.PHONY: test lint sonar sonar-publish
+.PHONY: test lint sonar sonar-publish sim-push
 
 # Go modules in the monorepo. Each one is tested and linted from its own
 # directory; add a new service's module here.
@@ -9,6 +9,17 @@ test:
 
 lint:
 	@for m in $(GO_MODULES); do (cd $$m && golangci-lint run ./...) || exit 1; done
+
+# sim/ is developed here and mirrored to its own repository: the history of sim/ on
+# origin/master, split out, becomes the mirror's master. Run it after a merge to master.
+# It only fast-forwards, so a commit made in the mirror itself stops it.
+SIM_REMOTE ?= git@github.com:dukobpa3/drone-swarm-sim.git
+
+sim-push:
+	@git fetch -q origin master && \
+	split=$$(git subtree split -q --prefix=sim origin/master) && \
+	echo "sim-push: sim/ of origin/master ($$split) -> $(SIM_REMOTE) master" && \
+	git push $(SIM_REMOTE) $$split:refs/heads/master
 
 # Tests with coverage, golangci-lint's reports, the scan of this checkout and the
 # quality gate (red: a non-zero exit). Lint findings do not stop it: Sonar imports
