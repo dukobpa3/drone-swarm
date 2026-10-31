@@ -15,13 +15,17 @@ lint:
 # and the gate decides. Needs SONAR_HOST_URL and SONAR_TOKEN, from the
 # environment or .env. Coverage paths are rewritten from the Go module path
 # to the module's directory, since go.mod is not at the project root.
+# scripts/sonar-scope decides whether this is the main branch, a pull
+# request or another branch.
 sonar:
 	@set -a; [ ! -f .env ] || . ./.env; set +a; \
 	test -n "$$SONAR_HOST_URL" && test -n "$$SONAR_TOKEN" || { echo 'Set SONAR_HOST_URL and SONAR_TOKEN (see CONTRIBUTING.md)'; exit 1; }; \
+	scope=$$(scripts/sonar-scope) || exit 1; \
+	echo "sonar: $${scope:-main branch}"; \
 	for m in $(GO_MODULES); do \
 	  (cd $$m && go test -coverprofile=coverage.out ./... && \
 	   mod=$$(go list -m) && sed "s|^$$mod/|$$m/|" coverage.out > coverage.tmp && mv coverage.tmp coverage.out) || exit 1; \
 	  (cd $$m && golangci-lint run --issues-exit-code=0 --output.text.path=stderr \
 	     --output.checkstyle.path=$(CURDIR)/$$m/golangci-lint.xml ./... 2> /dev/null) || exit 1; \
 	done; \
-	sonar-scanner -Dsonar.qualitygate.wait=true
+	sonar-scanner -Dsonar.qualitygate.wait=true $$scope

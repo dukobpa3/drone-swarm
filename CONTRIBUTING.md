@@ -26,7 +26,10 @@ Keep it private: `chmod 600 .env`.
 
 - `make sonar` runs the tests with coverage, golangci-lint (its report is
   imported into Sonar as external issues), the scan and the quality gate;
-  a red gate makes it fail.
+  a red gate makes it fail. On the main branch it updates the project; on
+  another branch it is analyzed as that branch's open pull request (found
+  with `gh`), or as a branch when there is none. Branches and pull requests
+  need the community branch plugin on the server.
 - `git config core.hooksPath .githooks` enables a pre-commit hook that runs
   `make sonar` when code under `sim/cmd` or `sim/internal` is staged. Skip it
   for one commit with `git commit --no-verify`.
