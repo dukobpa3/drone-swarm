@@ -1,8 +1,9 @@
 # drone-swarm
 
 Monorepo for the swarm: ground control, companion, protocols and the
-simulation launcher (`sim/`, the Go module `github.com/dukobpa3/drone-swarm/sim`,
-see `sim/README.md`). All of it lives here; there is no separate repository to sync.
+simulation launcher. `sim/` is a `git subtree` of
+github.com/dukobpa3/drone-swarm-sim; change it there or push it back with
+`git subtree push --prefix=sim git@github.com:dukobpa3/drone-swarm-sim.git master`.
 
 ## Before committing
 

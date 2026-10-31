@@ -7,9 +7,9 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/dukobpa3/drone-swarm/sim/internal/config"
-	"github.com/dukobpa3/drone-swarm/sim/internal/envcap"
-	"github.com/dukobpa3/drone-swarm/sim/internal/supervisor"
+	"github.com/dukobpa3/drone-swarm-sim/internal/config"
+	"github.com/dukobpa3/drone-swarm-sim/internal/envcap"
+	"github.com/dukobpa3/drone-swarm-sim/internal/supervisor"
 )
 
 // execBackend runs any command per drone, for vehicles swarmsim has no

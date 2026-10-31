@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dukobpa3/drone-swarm/sim/internal/envcap"
+	"github.com/dukobpa3/drone-swarm-sim/internal/envcap"
 )
 
 // fakePX4 writes a PX4 SITL build with the gz_x500 airframe and a stub gz

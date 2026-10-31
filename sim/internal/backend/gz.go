@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dukobpa3/drone-swarm/sim/internal/envcap"
-	"github.com/dukobpa3/drone-swarm/sim/internal/supervisor"
+	"github.com/dukobpa3/drone-swarm-sim/internal/envcap"
+	"github.com/dukobpa3/drone-swarm-sim/internal/supervisor"
 )
 
 const gzReadyTimeout = 90 * time.Second
