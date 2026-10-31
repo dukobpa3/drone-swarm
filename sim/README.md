@@ -1,4 +1,4 @@
-# drone-swarm-sim
+# swarmsim
 
 `swarmsim` runs a simulated drone swarm from one profile in one console: the
 gz world, then every drone, with all output merged and prefixed per process.
@@ -13,7 +13,7 @@ go build -o bin/swarmsim ./cmd/swarmsim
 ./bin/swarmsim up profiles/px4-4x-gz.yaml
 ```
 
-or `go install github.com/dukobpa3/drone-swarm-sim/cmd/swarmsim@latest`.
+or `go install github.com/dukobpa3/drone-swarm/sim/cmd/swarmsim@latest`.
 
 ## Two files
 
@@ -54,12 +54,3 @@ in `<run_dir>/<profile>/logs/`.
 extra defaults file for ArduPilot, which means values saved in a drone's
 eeprom win over them.
 
-## Use in a monorepo
-
-This repo is meant to be vendored with `git subtree`:
-
-```bash
-git subtree add --prefix=sim git@github.com:dukobpa3/drone-swarm-sim.git master --squash
-git subtree pull --prefix=sim git@github.com:dukobpa3/drone-swarm-sim.git master --squash
-git subtree push --prefix=sim git@github.com:dukobpa3/drone-swarm-sim.git master
-```

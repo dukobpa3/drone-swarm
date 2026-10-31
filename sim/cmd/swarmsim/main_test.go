@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dukobpa3/drone-swarm-sim/internal/config"
-	"github.com/dukobpa3/drone-swarm-sim/internal/supervisor"
+	"github.com/dukobpa3/drone-swarm/sim/internal/config"
+	"github.com/dukobpa3/drone-swarm/sim/internal/supervisor"
 )
 
 func planFixture() (*config.Lab, *config.Profile, []config.Drone, []supervisor.Spec) {

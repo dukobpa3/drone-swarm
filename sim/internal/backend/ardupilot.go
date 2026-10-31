@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/dukobpa3/drone-swarm-sim/internal/config"
-	"github.com/dukobpa3/drone-swarm-sim/internal/supervisor"
+	"github.com/dukobpa3/drone-swarm/sim/internal/config"
+	"github.com/dukobpa3/drone-swarm/sim/internal/supervisor"
 )
 
 // ArduPilot SITL with its builtin physics, started directly (no sim_vehicle.py,

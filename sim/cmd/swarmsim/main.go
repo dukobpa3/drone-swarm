@@ -17,9 +17,9 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/dukobpa3/drone-swarm-sim/internal/backend"
-	"github.com/dukobpa3/drone-swarm-sim/internal/config"
-	"github.com/dukobpa3/drone-swarm-sim/internal/supervisor"
+	"github.com/dukobpa3/drone-swarm/sim/internal/backend"
+	"github.com/dukobpa3/drone-swarm/sim/internal/config"
+	"github.com/dukobpa3/drone-swarm/sim/internal/supervisor"
 )
 
 func main() {
