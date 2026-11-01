@@ -7,14 +7,30 @@ The rule for the order: **isolate a low-level problem before adding the coordina
 would hide it.** Offsets from GC would keep drones apart in the bench and say nothing about
 what happens when two of them meet anyway.
 
-## Phase 0: the bench (done)
+## Phase 0: the bench
 
-`sim/` starts a swarm from a profile: PX4 SITL in gz, each drone with its own sensors
-(stock PX4 variants, or a base model with payloads built by swarmsim), all visible in QGC
-as separate vehicles. Missions are uploaded per drone from QGC.
+A swarm of any mix of PX4 and ArduPilot drones in one gz world, from one profile: two PX4
+and two ArduPilot, say, each with its own sensors, all in QGC as separate vehicles.
 
-The same mission uploaded to every drone makes them collide, again and again; the drone
-with a lidar collides too. That is the problem phase 1 starts from.
+Done:
+
+- `sim/` starts PX4 SITL in gz from a profile, each drone with its own sensors (stock PX4
+  variants, or a base model with payloads built by swarmsim). Missions are uploaded per
+  drone from QGC. The same mission on every drone makes them collide, again and again; the
+  drone with a lidar collides too. That is the problem phase 1 starts from.
+- ArduPilot SITL and `ardupilot_gazebo` are built against `drone-lab/gz`; three ArduPilot
+  iris have flown in gz, started by hand.
+
+Left:
+
+- **ArduPilot in gz from swarmsim.** Its backend runs only the builtin physics today. In gz
+  the drones do not spawn themselves as PX4's do: swarmsim has to write each drone's model
+  with the `ArduPilotPlugin` on its own port (9002 + 10 × instance), put it in the world,
+  start SITL with the frame's parameters and the world's home.
+- **Mixed profiles**: PX4 and ArduPilot groups in one world. One set of gz system plugins
+  and one physics step for both (PX4's worlds run 4 ms, ArduPilot's 1 ms; to be checked
+  what each tolerates), sysids and ports unique across both.
+- **Sensors on ArduPilot drones**, a lidar first: see phase 1.
 
 ## Phase 1: collision avoidance in the autopilot
 
@@ -35,23 +51,24 @@ PX4 as built in the lab (`v1.18.0-beta1-1258`):
   AUTO any more. So in a mission nothing in PX4 stops a collision: the collisions we see are
   the expected behaviour, not a broken sensor.
 
-ArduPilot (in the lab, not built yet):
+ArduPilot (built in the lab, flown in gz by hand):
 
 - `AC_Avoidance` with `AP_Proximity`: fences and proximity sensors, and path planning
   around obstacles (`OA_TYPE`: BendyRuler, Dijkstra) in AUTO and GUIDED.
 - `AP_Avoidance`: avoids other vehicles from their reported positions (ADS-B or MAVLink),
   without sensors; the one built-in mechanism aimed at drone-to-drone conflicts.
+- A lidar reaches it from gz only as up to six rangefinders: `ardupilot_gazebo` sends
+  `rng_1`..`rng_6` in its JSON, one distance each, not a scan. `AP_Proximity` can build its
+  sectors from rangefinders. A full scan needs `OBSTACLE_DISTANCE` over MAVLink from a
+  process that reads gz, which is a companion's job.
 
 ### Steps
 
 The regression scenario: four drones, one mission with the same waypoints for all, no
-offsets. ArduPilot is set up now, next to PX4: its avoidance works in AUTO, PX4's does not.
-PX4 stays as the baseline to compare with.
+offsets, on the phase 0 bench. ArduPilot goes first: its avoidance works in AUTO, PX4's
+does not. PX4 stays as the baseline to compare with.
 
-1. **ArduPilot in the bench.** ArduPilot SITL built, `ardupilot_gazebo` built against
-   `drone-lab/gz`, and swarmsim able to start ArduPilot drones in gz (today its ArduPilot
-   backend runs only the builtin physics, where there is no lidar and no other drone to see).
-2. **One lidar drone among the others.** One drone with a lidar, three without, the
+1. **One lidar drone among the others.** One drone with a lidar, three without, the
    same mission. The lidar drone must not run into the others; the others still fly blind,
    so a collision they cause is expected and recorded apart. On the way:
    - the sensor pipeline: gz publishes the scan, the autopilot gets it as proximity data
@@ -60,12 +77,12 @@ PX4 stays as the baseline to compare with.
    - a static obstacle first, then moving drones;
    - Position mode (PX4 `CP_DIST`) and AUTO (ArduPilot `OA_TYPE`, `AVOID_*`);
    - `AP_Avoidance`, which needs other drones' positions rather than a sensor.
-3. **Lidars on all four.** Only once step 2 works: do they deadlock or oscillate when
+2. **Lidars on all four.** Only once step 1 works: do they deadlock or oscillate when
    each gives way to the others, do they carry on after a conflict, what happens when
    several meet at once.
 
-The bench needs for this: profiles with one and with four lidar drones, a world with a
-static obstacle, and a way to set autopilot parameters per profile.
+The bench needs for this: profiles with one and with four lidar drones, and a world with a
+static obstacle.
 
 ### Measured
 
