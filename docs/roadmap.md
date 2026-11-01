@@ -18,18 +18,18 @@ Done:
   variants, or a base model with payloads built by swarmsim). Missions are uploaded per
   drone from QGC. The same mission on every drone makes them collide, again and again; the
   drone with a lidar collides too. That is the problem phase 1 starts from.
-- ArduPilot SITL and `ardupilot_gazebo` are built against `drone-lab/gz`; three ArduPilot
-  iris have flown in gz, started by hand.
+- ArduPilot SITL and `ardupilot_gazebo` are built against `drone-lab/gz`.
+- **ArduPilot in gz from swarmsim** (`sim/profiles/ap-4x-gz.yaml`): swarmsim writes each
+  drone a copy of the model with the `ArduPilotPlugin` on its own port (9002 + 10 ×
+  instance) and spawns it, starts SITL with the frame's parameters and the world's origin
+  as home, and sets the physics step to 1 ms. Four iris have flown in baylands at 0.86 of
+  real time, once the iris's collision mesh became a box (as a mesh it held gz at 0.09).
 
 Left:
 
-- **ArduPilot in gz from swarmsim.** Its backend runs only the builtin physics today. In gz
-  the drones do not spawn themselves as PX4's do: swarmsim has to write each drone's model
-  with the `ArduPilotPlugin` on its own port (9002 + 10 × instance), put it in the world,
-  start SITL with the frame's parameters and the world's home.
-- **Mixed profiles**: PX4 and ArduPilot groups in one world. One set of gz system plugins
-  and one physics step for both (PX4's worlds run 4 ms, ArduPilot's 1 ms; to be checked
-  what each tolerates), sysids and ports unique across both.
+- **Mixed profiles**: PX4 and ArduPilot groups in one world. One physics step for both:
+  with ArduPilot drones the world runs at 1 ms, which four x500 bodies keep up with in real
+  time, but PX4 flying at that step is not checked yet. Sysids and ports unique across both.
 - **Sensors on ArduPilot drones**, a lidar first: see phase 1.
 
 ## Phase 1: collision avoidance in the autopilot
