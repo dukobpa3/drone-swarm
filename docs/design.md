@@ -38,10 +38,26 @@ Two stages, the first one simple on purpose:
    area), so they keep apart without talking to each other. Each drone gets an ordinary
    autopilot mission.
 2. **The swarm assigns itself.** The mission goes to the swarm as a whole; the companions
-   negotiate who takes which task and keep their own spacing. GC only watches.
+   negotiate who takes which task, plan their own paths and keep their own spacing, and go
+   on when GC is out of reach. GC is one participant of the cluster: it can do the heavy
+   computing, configure missions and watch them, but the swarm does not depend on it.
+   State and results are replicated between participants, with priorities so the
+   critical links are not flooded.
 
 Stage 1 must not block stage 2: the task and capability model is the same in both; only the
 place where the decision is made moves from GC to the companions.
+
+## Layers on a drone
+
+| Layer | Does |
+|---|---|
+| Flight controller (PX4 or ArduPilot) | Stabilisation, low-level control, failsafes, the collision prevention it supports |
+| Companion: navigation | Perception, local planning, dynamic obstacles, where the flight controller is not enough |
+| Companion: cluster runtime | The shared mission, task allocation, capabilities, replication, coordination |
+
+Logical layers, not processes. What goes into the flight controller and what into the
+companion is decided by phase 1 of the [roadmap](roadmap.md): no avoidance of our own
+before the built-in one is measured.
 
 ## protocols
 
@@ -53,15 +69,10 @@ place where the decision is made moves from GC to the companions.
 - Messages between services and companions get a language-neutral schema (e.g. protobuf)
   as soon as a second language appears (C++ companion, Node GC).
 
-## First steps
+## Order of the work
 
-1. `protocols/`: the interface and the MAVLink implementation; checked against `sim/`
-   (connect to every drone of a running swarm, read telemetry).
-2. `gc/` as a command line tool: read a `.plan`, assign by requirements and offsets, upload
-   to every drone, start. The four x500 of `sim/profiles/px4-sensors.yaml` (lidar, depth,
-   thermal, plain) are the test bench: a thermal task must go to `thermal-0`.
-3. GC's interface (map, swarm state).
-4. `companion/`: reports capabilities, takes tasks; then stage 2.
+[roadmap.md](roadmap.md). In short: first what the autopilots do about collisions on their
+own (phase 1), then `protocols/` and `gc/` with stage 1 (phase 2), then `companion/`.
 
 ## Open questions
 
