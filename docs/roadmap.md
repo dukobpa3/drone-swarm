@@ -27,9 +27,10 @@ Done:
 
 Left:
 
-- **Mixed profiles**: PX4 and ArduPilot groups in one world. One physics step for both:
-  with ArduPilot drones the world runs at 1 ms, which four x500 bodies keep up with in real
-  time, but PX4 flying at that step is not checked yet. Sysids and ports unique across both.
+- **Mixed profiles**: PX4 and ArduPilot groups in one world. With ArduPilot drones the world
+  runs at 1 ms, and PX4 takes that: four x500 in baylands at 1 ms booted, armed and took off
+  as at 4 ms, gz at 0.93 of real time (1.0 at 4 ms). The cost is CPU: gz 33% → 74%, the
+  four PX4 79% → 103%. Sysids and ports unique across both.
 - **Sensors on ArduPilot drones**, a lidar first: see phase 1.
 
 ## Phase 1: collision avoidance in the autopilot
