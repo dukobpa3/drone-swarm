@@ -29,6 +29,9 @@ type World struct {
 	Name string `yaml:"name"`
 	GUI  bool   `yaml:"gui"`
 	Home *Home  `yaml:"home"`
+	// StepMS is the physics step in milliseconds, set on the running world.
+	// 0 keeps the world's own, or 1 ms when ArduPilot drones are in it.
+	StepMS float64 `yaml:"step_ms"`
 }
 
 type Home struct {

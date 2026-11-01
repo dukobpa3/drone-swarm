@@ -1,0 +1,29 @@
+# Two PX4 x500 and two ArduPilot iris in one gz world, at PX4's 4 ms step.
+# At 4 ms swarmsim adapts the ArduPilot drones (rotor gains, loop rate):
+# a third of the CPU of 1 ms, a slightly looser hover. Leave step_ms out
+# for 1 ms, ArduPilot as on a real copter.
+name: mixed-gz
+
+world:
+  sim: gz
+  name: baylands
+  gui: true
+  step_ms: 4
+
+layout:
+  kind: grid
+  spacing: 2
+
+groups:
+  # px4 first: PX4 instances above index 9 share an offboard port.
+  - name: x500
+    autopilot: px4
+    model: gz_x500
+    count: 2
+    params:
+      COM_RC_IN_MODE: 4   # no RC needed to arm in sim
+
+  - name: iris
+    autopilot: ardupilot
+    model: iris_with_ardupilot
+    count: 2

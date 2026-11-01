@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -28,9 +29,13 @@ type ardupilot struct{}
 
 const (
 	ardupilotGCS = "udpclient:127.0.0.1:14550"
-	// ardupilotGzStep is the physics step ArduPilot needs: one loop per step,
-	// and copter refuses to arm below 400 Hz.
+	// ardupilotGzStep is the physics step ArduPilot runs at as it would on a
+	// copter: one loop per step, 400 Hz and up. Longer steps adapt the drone,
+	// see ardupilotLoopRate and scaleGains.
 	ardupilotGzStep = 0.001
+	// ardupilotMaxStepMS: the loop runs at half the frame rate at longer
+	// steps, and SCHED_LOOP_RATE goes down to 50 Hz.
+	ardupilotMaxStepMS = 10
 	// ardupilotGzModel is ardupilot_gazebo's quad with the plugin.
 	ardupilotGzModel = "iris_with_ardupilot"
 	// ardupilotGzLine is logged once gz answers SITL.
@@ -53,7 +58,10 @@ var ardupilotGzFrames = map[string]struct{ vehicle, defaults string }{
 	"zephyr_with_ardupilot": {"plane", "gazebo-zephyr.parm"},
 }
 
-var fdmPort = regexp.MustCompile(`<fdm_port_in>\s*\d+\s*</fdm_port_in>`)
+var (
+	fdmPort = regexp.MustCompile(`<fdm_port_in>\s*\d+\s*</fdm_port_in>`)
+	pGain   = regexp.MustCompile(`<p_gain>\s*([-+0-9.eE]+)\s*</p_gain>`)
+)
 
 func (ardupilot) Check(env *Env, d config.Drone) error {
 	lab := env.Lab.ArduPilot
@@ -96,6 +104,9 @@ func checkArdupilotGz(env *Env, g *config.Group) error {
 	}
 	if _, err := ardupilotGzSDF(env, g); err != nil {
 		return err
+	}
+	if step := env.Profile.World.StepMS; step > ardupilotMaxStepMS {
+		return fmt.Errorf("world.step_ms %g: ardupilot drones fly at %d ms steps at most", step, ardupilotMaxStepMS)
 	}
 	if env.Profile.World.Home == nil {
 		sdf, err := worldSDF(env)
@@ -140,8 +151,12 @@ func (ardupilot) Specs(env *Env, d config.Drone) ([]supervisor.Spec, error) {
 			return waitLogLine(ctx, log, offset, ardupilotGzLine, "", ardupilotGzTimeout)
 		}
 	}
-	if len(g.Params) > 0 {
-		p, err := writeParmFile(dir, g.Params)
+	params := g.Params
+	if g.Sim == "gz" {
+		params = withLoopRate(params, Step(env.Profile, env.Drones))
+	}
+	if len(params) > 0 {
+		p, err := writeParmFile(dir, params)
 		if err != nil {
 			return nil, err
 		}
@@ -223,6 +238,7 @@ func ardupilotGzSpawn(env *Env, d config.Drone) (func(context.Context) error, er
 			return err
 		}
 		data = fdmPort.ReplaceAll(data, []byte(fmt.Sprintf("<fdm_port_in>%d</fdm_port_in>", 9002+10*d.Index)))
+		data = scaleGains(data, ardupilotGzStep/Step(env.Profile, env.Drones))
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return err
 		}
@@ -231,6 +247,41 @@ func ardupilotGzSpawn(env *Env, d config.Drone) (func(context.Context) error, er
 		}
 		return spawnModel(ctx, env, sdf, d.Name, d.X, d.Y)
 	}, nil
+}
+
+// withLoopRate fits copter's loop to the frame rate. SITL runs one loop per
+// physics frame, and arming wants the loop at 90% of SCHED_LOOP_RATE and the
+// gyro at 1.8 times it: below 720 frames a second that fails at the default
+// 400 Hz. Half the frame rate passes both and stays aligned to frames (at 4 ms,
+// 200 Hz would run at 166). A rate set in the profile wins.
+func withLoopRate(params map[string]float64, step float64) map[string]float64 {
+	frames := 1 / step
+	if _, set := params["SCHED_LOOP_RATE"]; set || frames >= 720 {
+		return params
+	}
+	out := map[string]float64{"SCHED_LOOP_RATE": math.Round(frames / 2)}
+	for k, v := range params {
+		out[k] = v
+	}
+	return out
+}
+
+// scaleGains multiplies the model's joint P gains. ardupilot_gazebo turns
+// each rotor with a P controller on the joint's torque, tuned for 1 ms; it is
+// stable while p_gain·dt/I < 2 (the iris rotor: 1.19 at 1 ms, 4.8 at 4 ms, so
+// at 4 ms the rotors never spin up). Scaling p_gain by 1 ms/step keeps each
+// step's correction as it was at 1 ms.
+func scaleGains(sdf []byte, by float64) []byte {
+	if by == 1 {
+		return sdf
+	}
+	return pGain.ReplaceAllFunc(sdf, func(m []byte) []byte {
+		v, err := strconv.ParseFloat(string(pGain.FindSubmatch(m)[1]), 64)
+		if err != nil {
+			return m
+		}
+		return []byte("<p_gain>" + strconv.FormatFloat(v*by, 'g', 6, 64) + "</p_gain>")
+	})
 }
 
 func sortedKeys[V any](m map[string]V) []string {
@@ -253,7 +304,7 @@ func ardupilotDefaults(root, file string) string {
 	return filepath.Join(root, "Tools", "autotest", "default_params", file)
 }
 
-// writeParmFile writes the group params as an extra defaults file. ArduPilot
+// writeParmFile writes the drone's params as an extra defaults file. ArduPilot
 // applies defaults files in order, so these win over the vehicle defaults.
 func writeParmFile(dir string, params map[string]float64) (string, error) {
 	if err := os.MkdirAll(dir, 0o755); err != nil {

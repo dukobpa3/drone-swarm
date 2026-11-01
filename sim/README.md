@@ -40,7 +40,33 @@ missing.
 
 The gz server is started by swarmsim, not by the first PX4, so no drone is
 special. gz drones keep the world's own origin unless the profile sets
-`world.home`.
+`world.home`. PX4 and ArduPilot drones share one world (`profiles/mixed-gz.yaml`).
+
+## Physics step
+
+`world.step_ms` sets the world's physics step once it is up. Without it the
+world keeps its own (PX4's worlds: 4 ms), or runs at 1 ms when ArduPilot drones
+are in it, so their loop runs at 400 Hz as on a copter. PX4 follows gz time at
+any step. The step is the CPU bill: four ArduPilot drones in baylands take
+gz 145% and SITL 78% at 1 ms, 40% and 53% at 4 ms; two PX4 and two ArduPilot
+at 4 ms, about 40%, 35% and 30%.
+
+At steps over 1 ms swarmsim adapts the ArduPilot drones (up to 10 ms):
+
+- their rotors: ardupilot_gazebo turns each with a P controller on the joint,
+  stable while `p_gain·dt/I < 2` (the iris: 1.19 at 1 ms, 4.8 at 4 ms, where
+  the rotors never spin up). The model's `p_gain`s are scaled by 1 ms/step.
+- their loop: SITL runs one loop per frame, and arming wants the loop at 90%
+  of `SCHED_LOOP_RATE` and the gyro at 1.8 times it. Below 720 frames a second
+  `SCHED_LOOP_RATE` is set to half the frame rate (125 Hz at 4 ms) unless the
+  profile sets it. They hover a little looser: ±14 mm and 3° at 4 ms against
+  ±5 mm and 0.4° at 1 ms.
+
+SITL took the physics time of its first JSON frame as elapsed time, so a drone
+that joins a world that has run a while (after PX4 drones, or late in a big
+swarm) jumped by that much; at 4 ms its gyro rate came out wrong and it barely
+flew. drone-lab patches SITL so the first frame advances no time
+(`libraries/SITL/SIM_JSON.cpp`, `deltat = 0` while `frame_counter == 0`).
 
 ArduPilot in gz differs from PX4 in what swarmsim does for it:
 
@@ -52,9 +78,7 @@ ArduPilot in gz differs from PX4 in what swarmsim does for it:
   the model's frame parameters (`gazebo-iris.parm` for the iris).
 - SITL's home is the world's origin (`world.home`, else the world's
   `spherical_coordinates`); gz places the drone, and GPS follows from both.
-- ArduPilot runs one loop per physics step and copter will not arm below
-  400 Hz, so with ArduPilot drones swarmsim sets the world's step to 1 ms.
-  PX4's worlds without system plugins get them from PX4's server config, so
+- PX4's worlds without system plugins get them from PX4's server config, so
   `px4` in lab.yaml is needed for them even without PX4 drones.
 - SITL exits silently (`exit(1)`, nothing in its log) when the process that
   started it exits: it watches its parent so sim_vehicle.py's children do not

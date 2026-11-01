@@ -89,7 +89,13 @@ func (e *Env) checkWorld() []string {
 	default:
 		problems = append(problems, fmt.Sprintf("world.sim %q: use gz or none", e.Profile.World.Sim))
 	}
+	if e.Profile.World.StepMS < 0 {
+		problems = append(problems, fmt.Sprintf("world.step_ms %g: give a positive step, or leave it out", e.Profile.World.StepMS))
+	}
 	if !e.usesGz() {
+		if e.Profile.World.StepMS != 0 {
+			problems = append(problems, "world.step_ms is the gz world's physics step, and no drone runs in gz")
+		}
 		return problems
 	}
 	if e.Profile.World.Sim != "gz" {
