@@ -56,6 +56,10 @@ ArduPilot in gz differs from PX4 in what swarmsim does for it:
   400 Hz, so with ArduPilot drones swarmsim sets the world's step to 1 ms.
   PX4's worlds without system plugins get them from PX4's server config, so
   `px4` in lab.yaml is needed for them even without PX4 drones.
+- SITL exits silently (`exit(1)`, nothing in its log) when the process that
+  started it exits: it watches its parent so sim_vehicle.py's children do not
+  outlive it. swarmsim stays up, but a SITL started by hand from a script that
+  then returns dies a moment later, and in lockstep gz then waits for it.
 - At 1 ms, ardupilot_gazebo's iris collision mesh slows gz to a tenth of real
   time (four iris in baylands). Make it a box with the mesh's bounds: in
   iris_with_standoffs, `base_collision` becomes
