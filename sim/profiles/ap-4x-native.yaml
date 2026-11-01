@@ -1,0 +1,22 @@
+# Four ArduPilot iris as ardupilot_gazebo ships them: 1 ms physics steps (the
+# default with ArduPilot drones), ArduPilot's own loop rate and rotor gains,
+# no parameters from the profile. To compare with mixed-gz at 4 ms.
+# QGC's virtual joystick sends half throttle, which blocks arming
+# ("Throttle too high"): turn it off in QGC, or set RC_OPTIONS: 34 here.
+name: ap-4x-native
+
+world:
+  sim: gz
+  name: baylands
+  gui: true
+
+layout:
+  kind: grid
+  spacing: 2
+
+groups:
+  - name: iris
+    autopilot: ardupilot
+    vehicle: copter
+    model: iris_with_ardupilot
+    count: 4

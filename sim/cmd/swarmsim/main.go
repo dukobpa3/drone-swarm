@@ -75,7 +75,11 @@ func run(labFlag, command, profilePath string) error {
 
 func printPlan(out io.Writer, lab *config.Lab, prof *config.Profile, drones []config.Drone, specs []supervisor.Spec) error {
 	p := &printer{w: out}
-	p.printf("lab:     %s\nprofile: %s (%s)\nrun dir: %s/%s\n\n", lab.Path(), prof.Path(), prof.Name, lab.RunDir, prof.Name)
+	p.printf("lab:     %s\nprofile: %s (%s)\nrun dir: %s/%s\n", lab.Path(), prof.Path(), prof.Name, lab.RunDir, prof.Name)
+	if step := backend.Step(prof, drones); step > 0 {
+		p.printf("physics: %g ms steps\n", step*1000)
+	}
+	p.printf("\n")
 	tw := tabwriter.NewWriter(out, 0, 0, 2, ' ', 0)
 	t := &printer{w: tw}
 	t.printf("DRONE\tAUTOPILOT\tSIM\tSYSID\tPOS\tMAVLINK\n")

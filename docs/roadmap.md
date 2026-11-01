@@ -24,31 +24,14 @@ Done:
   instance) and spawns it, starts SITL with the frame's parameters and the world's origin
   as home, and sets the physics step to 1 ms. Four iris have flown in baylands at 0.86 of
   real time, once the iris's collision mesh became a box (as a mesh it held gz at 0.09).
+- **Mixed profiles** (`sim/profiles/mixed-gz.yaml`): two PX4 and two ArduPilot in baylands,
+  all four armed and took off. `world.step_ms` sets the physics step; at steps over 1 ms
+  swarmsim adapts the ArduPilot drones (rotor gains, loop rate, see `sim/README.md`). At
+  4 ms the four take gz 41%, PX4 35%, SITL 30% of the CPU, in real time; ArduPilot needs
+  a SITL patch there to join a world that already runs.
 
 Left:
 
-- **Mixed profiles**: PX4 and ArduPilot groups in one world. With ArduPilot drones the world
-  runs at 1 ms, and PX4 takes that: four x500 in baylands at 1 ms booted, armed and took off
-  as at 4 ms, gz at 0.93 of real time (1.0 at 4 ms). The cost is CPU: gz 33% → 74%, the
-  four PX4 79% → 103%. Sysids and ports unique across both.
-
-  ArduPilot can run at PX4's 4 ms too, with two changes, checked in baylands:
-  - the iris's rotor speed controller (a P gain on the joint) goes unstable at 4 ms:
-    `p_gain · dt / I` is 1.19 at 1 ms and 4.8 at 4 ms (stable below 2), so the rotors
-    never spin up. `p_gain` 0.2 → 0.05 gives each step the same dynamics as 0.2 at 1 ms;
-  - copter's loop runs once per physics frame, 250 Hz, and arming wants it at 90% of
-    `SCHED_LOOP_RATE` and the gyro at 1.8× of it. `SCHED_LOOP_RATE 125` passes both;
-    250 needs the INS checks skipped (`ARMING_SKIPCHK 16`); 200 runs at 166 Hz and fails.
-
-  | iris, one drone | hover | 30 m north | four drones: gz / four SITL CPU |
-  |---|---|---|---|
-  | 1 ms, loop 400 | 10.00 ± 0.005 m, tilt 0.4° | 6.6 s, overshoot 0.09 m | 145% / 78% |
-  | 4 ms, loop 125 | 10.00 ± 0.014 m, tilt 2.7° | 6.7 s, overshoot 0.10 m | 40% / 53% |
-  | 4 ms, loop 250 | 10.00 ± 0.013 m, tilt 3.2° | 6.5 s, overshoot 0.10 m | 38% / 53% |
-
-  So 4 ms costs a third of the CPU and flies slightly looser, with a control loop slower
-  than a real copter's 400 Hz. 1 ms stays the default; 4 ms is the option when CPU limits
-  the number of drones.
 - **Sensors on ArduPilot drones**, a lidar first: see phase 1.
 
 ## Phase 1: collision avoidance in the autopilot

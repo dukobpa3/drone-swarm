@@ -30,14 +30,12 @@ func gzWorld(env *Env) ([]supervisor.Spec, error) {
 	}
 	name := env.Profile.WorldName()
 	ready := func(ctx context.Context) error { return waitWorld(ctx, gz, env.Gz, name) }
-	if inGz(env.Drones, "ardupilot") {
-		// ArduPilot runs one loop per physics step and refuses to arm below
-		// 400 Hz; PX4's worlds step 4 ms. PX4 follows gz time at any step.
+	if step := Step(env.Profile, env.Drones); step > 0 {
 		ready = func(ctx context.Context) error {
 			if err := waitWorld(ctx, gz, env.Gz, name); err != nil {
 				return err
 			}
-			return setStep(ctx, gz, env.Gz, name, ardupilotGzStep)
+			return setStep(ctx, gz, env.Gz, name, step)
 		}
 	}
 
@@ -62,6 +60,20 @@ func gzWorld(env *Env) ([]supervisor.Spec, error) {
 		})
 	}
 	return specs, nil
+}
+
+// Step is the physics step swarmsim sets on the world, in seconds:
+// world.step_ms, else 1 ms with ArduPilot drones in it (copter runs one loop
+// per step and arms at 400 Hz), else 0 for the world's own (PX4's step 4 ms).
+// PX4 follows gz time at any step; ArduPilot drones are adapted to it.
+func Step(prof *config.Profile, drones []config.Drone) float64 {
+	if prof.World.StepMS > 0 {
+		return prof.World.StepMS / 1000
+	}
+	if inGz(drones, "ardupilot") {
+		return ardupilotGzStep
+	}
+	return 0
 }
 
 // worldSDF resolves the profile's world against PX4's worlds directory.
