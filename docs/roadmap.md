@@ -35,45 +35,49 @@ PX4 as built in the lab (`v1.18.0-beta1-1258`):
   AUTO any more. So in a mission nothing in PX4 stops a collision: the collisions we see are
   the expected behaviour, not a broken sensor.
 
-ArduPilot (in the lab, not yet run in the swarm):
+ArduPilot (in the lab, not built yet):
 
 - `AC_Avoidance` with `AP_Proximity`: fences and proximity sensors, and path planning
   around obstacles (`OA_TYPE`: BendyRuler, Dijkstra) in AUTO and GUIDED.
 - `AP_Avoidance`: avoids other vehicles from their reported positions (ADS-B or MAVLink),
   without sensors; the one built-in mechanism aimed at drone-to-drone conflicts.
 
-### Experiments
+### Steps
 
 The regression scenario: four drones, one mission with the same waypoints for all, no
-offsets.
+offsets. ArduPilot is set up now, next to PX4: its avoidance works in AUTO, PX4's does not.
+PX4 stays as the baseline to compare with.
 
-- **A. Sensor pipeline.** One drone with a lidar: does gz publish the scan, does PX4 get
-  it, does `obstacle_distance` appear with sane frame, range and field of view? With
-  `CP_DIST` set, does it hold the drone off a wall in Position mode? A lidar in the model
-  proves nothing on its own.
-- **B. Static obstacle.** One drone and a fixed obstacle: Position mode and Mission. The
-  outcome to record is whatever the autopilot does (stops, slides, goes around, nothing).
-- **C. Four drones.** Four with lidars, the same mission: do they see each other (a 2D
-  scan sees only its own height), react to a moving drone, deadlock or oscillate, carry
-  on after a conflict?
-- **D. ArduPilot**, only if PX4 has no answer for AUTO: B and C with `OA_TYPE` and with
-  `AP_Avoidance`, to compare what it does and what it costs to set up. No migration
-  without a reason from these results.
+1. **ArduPilot in the bench.** ArduPilot SITL built, `ardupilot_gazebo` built against
+   `drone-lab/gz`, and swarmsim able to start ArduPilot drones in gz (today its ArduPilot
+   backend runs only the builtin physics, where there is no lidar and no other drone to see).
+2. **One lidar drone among the others.** One drone with a lidar, three without, the
+   same mission. The lidar drone must not run into the others; the others still fly blind,
+   so a collision they cause is expected and recorded apart. On the way:
+   - the sensor pipeline: gz publishes the scan, the autopilot gets it as proximity data
+     with sane frame, range and field of view (a lidar in the model proves nothing on its
+     own; a 2D scan sees only its own height);
+   - a static obstacle first, then moving drones;
+   - Position mode (PX4 `CP_DIST`) and AUTO (ArduPilot `OA_TYPE`, `AVOID_*`);
+   - `AP_Avoidance`, which needs other drones' positions rather than a sensor.
+3. **Lidars on all four.** Only once step 2 works: do they deadlock or oscillate when
+   each gives way to the others, do they carry on after a conflict, what happens when
+   several meet at once.
 
-The bench needs for this: a profile with four lidar drones, a world with a static
-obstacle, and a way to set autopilot parameters per profile.
+The bench needs for this: profiles with one and with four lidar drones, a world with a
+static obstacle, and a way to set autopilot parameters per profile.
 
 ### Measured
 
 Per run: collisions, the minimum distance between drones, avoidance interventions
 (stops), the flight modes and failsafes, missions finished, deadlocks. From the logs the
-autopilots already write (ULog for PX4), with the same start conditions every run, so a
+autopilots already write (ULog for PX4, dataflash for ArduPilot), with the same start conditions every run, so a
 change in configuration can be compared with the run before it.
 
 ### Done when
 
 - It is established, from runs, whether the built-in avoidance works with our sensors and
-  flight modes, for one drone and for four.
+  flight modes: for one lidar drone among blind ones, then for four lidar drones.
 - Its limits are written down.
 - There is a decision, with reasons, on where avoidance lives: the flight controller, the
   companion, or both. For this phase it is enough that a collision is prevented
